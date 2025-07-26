@@ -1,19 +1,94 @@
+import { useRef, useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
+
 export default function DashboardProfile() {
+  const fileInputRef = useRef(null);
+  const [profileImage, setProfileImage] = useState(null);
+  const [postCount, setPostCount] = useState(0); // ✅ جدید
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("http://localhost:3000/me", {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch profile");
+
+        const data = await res.json();
+        if (data.avatar) {
+          setProfileImage("http://localhost:3000" + data.avatar);
+        }
+      } catch (err) {
+        toast.error("Error fetching profile: " + err.message);
+      }
+    };
+
+    const fetchPostCount = async () => {
+      try {
+        const res = await fetch("http://localhost:3000/post-count", {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch post count");
+
+        const data = await res.json();
+        setPostCount(data.count);
+      } catch (err) {
+        toast.error("Error fetching post count: " + err.message);
+      }
+    };
+
+    fetchProfile();
+    fetchPostCount(); // ✅ فراخوانی
+  }, []);
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const res = await fetch("http://localhost:3000/avatar", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      setProfileImage("http://localhost:3000" + data.avatar);
+    } catch (err) {
+      toast.error("Upload failed: " + err.message);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current.click();
+  };
+
   return (
     <div className="w-full flex flex-col items-center py-4 space-y-3">
-      {/* Profile Section */}
       <div className="w-full flex items-center justify-around">
-        {/* Profile Picture Wrapper */}
         <div className="relative w-20 h-20 rounded-full flex items-center justify-center border-2 border-gray-500">
           <img
-            src="./src/assets/Pictures/ProfileIcon.svg"
+            src={profileImage || "./src/assets/Pictures/ProfileIcon.svg"}
             alt="Profile Icon"
             className="w-full h-full rounded-full bg-white object-cover"
           />
 
-          {/* Upload Button */}
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+
           <button
-            className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-blue-600 border border-black flex items-center justify-center hover:bg-pink-500 transition"
+            onClick={handleUploadClick}
+            className="absolute bottom-0 right-0 w-6 h-6 rounded-full border border-black flex items-center justify-center transition"
             title="Upload Profile Picture"
           >
             <img
@@ -26,21 +101,18 @@ export default function DashboardProfile() {
 
         {/* Stats */}
         <div className="flex items-center space-x-6 text-center">
-          <div className="flex flex-col">
-            <span className="text-lg font-bold">0</span>
-            <span className="text-sm text-gray-400">Posts</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-bold">0</span>
-            <span className="text-sm text-gray-400">Followers</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-bold">0</span>
-            <span className="text-sm text-gray-400">Following</span>
-          </div>
+          {[
+            { label: "Posts", value: postCount },
+            { label: "Followers", value: 0 },
+            { label: "Following", value: 0 },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex flex-col">
+              <span className="text-lg font-bold">{value}</span>
+              <span className="text-sm text-gray-400">{label}</span>
+            </div>
+          ))}
         </div>
       </div>
-
     </div>
   );
 }
