@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router-dom";
 export default function DashboardButtons() {
+  const navigate = useNavigate()
   return (
     <div className="w-full flex items-center justify-center space-x-2 h-10 px-4 ">
-      <button className="flex-[3] text-sm px-2 py-1 bg-gray-500 rounded-xl text-white text-center">
+      <button onClick={()=> navigate("/edit")} className="flex-[3] text-sm px-2 py-1 bg-gray-500 rounded-xl text-white text-center">
         Edit profile
       </button>
 

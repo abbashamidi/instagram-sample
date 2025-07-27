@@ -4,7 +4,8 @@ import { toast } from "react-hot-toast";
 export default function DashboardProfile() {
   const fileInputRef = useRef(null);
   const [profileImage, setProfileImage] = useState(null);
-  const [postCount, setPostCount] = useState(0); // ✅ جدید
+  const [postCount, setPostCount] = useState(0);
+  const [bio, setBio] = useState("Loading..."); // ✅ bio state جدید
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -15,11 +16,17 @@ export default function DashboardProfile() {
         if (!res.ok) throw new Error("Failed to fetch profile");
 
         const data = await res.json();
+        console.log("Profile data:", data); // ✅ اضافه کن
+
         if (data.avatar) {
           setProfileImage("http://localhost:3000" + data.avatar);
         }
+        if (data.bio) {
+          setBio(data.bio);
+        }
       } catch (err) {
         toast.error("Error fetching profile: " + err.message);
+        setBio("Bio not available");
       }
     };
 
@@ -38,7 +45,7 @@ export default function DashboardProfile() {
     };
 
     fetchProfile();
-    fetchPostCount(); // ✅ فراخوانی
+    fetchPostCount();
   }, []);
 
   const handleImageUpload = async (event) => {
@@ -77,7 +84,6 @@ export default function DashboardProfile() {
             alt="Profile Icon"
             className="w-full h-full rounded-full bg-white object-cover"
           />
-
           <input
             type="file"
             accept="image/*"
@@ -85,7 +91,6 @@ export default function DashboardProfile() {
             className="hidden"
             onChange={handleImageUpload}
           />
-
           <button
             onClick={handleUploadClick}
             className="absolute bottom-0 right-0 w-6 h-6 rounded-full border border-black flex items-center justify-center transition"
@@ -112,6 +117,14 @@ export default function DashboardProfile() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* ✅ Bio section */}
+      <div className="w-full px-6">
+        <h2 className="text-base font-semibold mb-1 text-white">Bio</h2>
+        <p className="text-sm text-gray-300 whitespace-pre-line text-left">
+          {bio}
+        </p>
       </div>
     </div>
   );

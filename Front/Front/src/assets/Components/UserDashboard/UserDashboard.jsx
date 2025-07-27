@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useState, useRef } from "react";
 import DashboardHeader from "./DashboardHeader";
 import DashboardProfile from "./DashboardProfile";
 import DashboardButtons from "./DashboardButtons";
@@ -7,9 +7,10 @@ import DashboardFooter from "./DashboardFooter";
 
 export default function UserDashboard() {
   const postsRef = useRef();
+  const [activeTab, setActiveTab] = useState("home");
 
   const handleUploadSuccess = () => {
-    postsRef.current?.refreshPosts?.(); // فقط اگر متد وجود داشت
+    postsRef.current?.refreshPosts?.();
   };
 
   return (
@@ -18,7 +19,7 @@ export default function UserDashboard() {
       <DashboardProfile />
       <DashboardButtons />
       <DashboardPosts ref={postsRef} />
-      <DashboardFooter />
+      <DashboardFooter activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   );
 }

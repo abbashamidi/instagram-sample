@@ -12,6 +12,8 @@ import {
 } from "./assets/AuthContext/AuthContext";
 import ProtectedRoute from "./assets/Routes/ProtectedRoute";
 import PublicRoute from "./assets/Routes/PublicRoute";
+import Explore from "./assets/Components/Explore/Explore";
+import EditProfile from "./assets/Components/EditProfile/EditProfile";
 
 function AuthInitializer() {
   const dispatch = useAuthDispatch();
@@ -74,6 +76,23 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardSettings />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/explore"
+            element={
+              <ProtectedRoute>
+                <Explore />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/edit"
+            element={
+              <ProtectedRoute>
+                <EditProfile />
               </ProtectedRoute>
             }
           />
