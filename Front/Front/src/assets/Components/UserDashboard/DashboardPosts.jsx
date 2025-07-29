@@ -58,6 +58,9 @@ const DashboardPosts = forwardRef((props, ref) => {
           />
         </div>
       ))}
+
+      {/* Spacer برای جلوگیری از پوشش Footer روی پست‌ها */}
+      <div className="col-span-3 h-12" />
     </div>
   );
 });

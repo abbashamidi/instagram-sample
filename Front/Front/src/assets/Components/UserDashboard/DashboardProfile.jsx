@@ -1,49 +1,61 @@
-import { useRef, useState, useEffect } from "react";
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { toast } from "react-hot-toast";
 
-export default function DashboardProfile() {
+const DashboardProfile = forwardRef((props, ref) => {
   const fileInputRef = useRef(null);
   const [profileImage, setProfileImage] = useState(null);
   const [postCount, setPostCount] = useState(0);
-  const [bio, setBio] = useState("Loading..."); // ✅ bio state جدید
+  const [bio, setBio] = useState("Loading...");
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch("http://localhost:3000/me", {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch profile");
+
+      const data = await res.json();
+      console.log("Profile data:", data);
+
+      if (data.avatar) {
+        setProfileImage("http://localhost:3000" + data.avatar);
+      }
+      if (data.bio) {
+        setBio(data.bio);
+      } else {
+        setBio("Write something about yourself");
+      }
+    } catch (err) {
+      toast.error("Error fetching profile: " + err.message);
+      setBio("Bio not available");
+    }
+  };
+
+  const fetchPostCount = async () => {
+    try {
+      const res = await fetch("http://localhost:3000/post-count", {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch post count");
+
+      const data = await res.json();
+      setPostCount(data.count);
+    } catch (err) {
+      toast.error("Error fetching post count: " + err.message);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    refreshPostCount: fetchPostCount,
+  }));
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch("http://localhost:3000/me", {
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error("Failed to fetch profile");
-
-        const data = await res.json();
-        console.log("Profile data:", data); // ✅ اضافه کن
-
-        if (data.avatar) {
-          setProfileImage("http://localhost:3000" + data.avatar);
-        }
-        if (data.bio) {
-          setBio(data.bio);
-        }
-      } catch (err) {
-        toast.error("Error fetching profile: " + err.message);
-        setBio("Bio not available");
-      }
-    };
-
-    const fetchPostCount = async () => {
-      try {
-        const res = await fetch("http://localhost:3000/post-count", {
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error("Failed to fetch post count");
-
-        const data = await res.json();
-        setPostCount(data.count);
-      } catch (err) {
-        toast.error("Error fetching post count: " + err.message);
-      }
-    };
-
     fetchProfile();
     fetchPostCount();
   }, []);
@@ -119,7 +131,7 @@ export default function DashboardProfile() {
         </div>
       </div>
 
-      {/* ✅ Bio section */}
+      {/* Bio section */}
       <div className="w-full px-6">
         <h2 className="text-base font-semibold mb-1 text-white">Bio</h2>
         <p className="text-sm text-gray-300 whitespace-pre-line text-left">
@@ -128,4 +140,6 @@ export default function DashboardProfile() {
       </div>
     </div>
   );
-}
+});
+
+export default DashboardProfile;

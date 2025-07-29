@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function EditProfile() {
@@ -6,20 +6,55 @@ export default function EditProfile() {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState(null);
+  const [showPanel, setShowPanel] = useState(false);
+
+  const panelRef = useRef(null); // 👈 برای کلیک بیرونی
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(timer);
+    const fetchProfile = async () => {
+      const startTime = Date.now();
+
+      try {
+        const res = await fetch("http://localhost:3000/me", {
+          credentials: "include",
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch profile");
+
+        const data = await res.json();
+        setUsername(data.username || "");
+        setBio(data.bio || "");
+        setAvatar(data.avatar ? `http://localhost:3000${data.avatar}` : null);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        const elapsed = Date.now() - startTime;
+        const remaining = 1000 - elapsed;
+        if (remaining > 0) setTimeout(() => setLoading(false), remaining);
+        else setLoading(false);
+      }
+    };
+
+    fetchProfile();
   }, []);
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setAvatar(URL.createObjectURL(file));
-    }
-  };
+  // 👇 هندل کلیک بیرون از پنل
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (
+        showPanel &&
+        panelRef.current &&
+        !panelRef.current.contains(e.target)
+      ) {
+        setShowPanel(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [showPanel]);
 
   if (loading) {
     return (
@@ -30,7 +65,7 @@ export default function EditProfile() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-[#121212] text-white px-4 py-5">
+    <div className="relative w-full min-h-screen bg-[#121212] text-white px-4 py-5 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate("/dashboard")}>
@@ -44,9 +79,10 @@ export default function EditProfile() {
       </div>
 
       {/* Form */}
-      <div className="flex flex-col items-center gap-6">
+      {/* Form */}
+      <div className="flex flex-col items-center gap-4">
         {/* Avatar */}
-        <div className="relative">
+        <div className="relative flex flex-col items-center">
           <img
             src={
               avatar ||
@@ -55,45 +91,88 @@ export default function EditProfile() {
             alt="Avatar"
             className="w-28 h-28 rounded-full object-cover border border-gray-500"
           />
-          <label className="absolute bottom-0 right-0 bg-white text-black text-xs px-2 py-1 rounded-full cursor-pointer transition hover:bg-gray-300">
-            Change
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
-          </label>
+          <span
+            onClick={() => setShowPanel(true)}
+            className="mt-4 text-sm text-blue-400 cursor-pointer hover:underline"
+          >
+            Edit Profile Picture
+          </span>
         </div>
 
         {/* Username */}
         <div className="w-full">
-          <label className="text-sm text-gray-300 mb-1 block">Username</label>
+          <span className="block text-sm text-gray-400 mb-1 pl-1.5">
+            Username
+          </span>
           <input
             type="text"
-            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none focus:ring-2 focus:ring-gray-500 transition"
+            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none border border-gray-700 focus:border-gray-500 focus:ring-2 focus:ring-gray-500 transition"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="Enter your username"
           />
         </div>
 
         {/* Bio */}
         <div className="w-full">
-          <label className="text-sm text-gray-300 mb-1 block">Bio</label>
+          <span className="block text-sm text-gray-400 mb-1 pl-1.5">Bio</span>
           <textarea
-            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none focus:ring-2 focus:ring-gray-500 transition resize-none"
-            rows="3"
+            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none border border-gray-700 focus:border-gray-500 focus:ring-2 focus:ring-gray-500 transition resize-none"
+            rows={3}
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            placeholder="Write something about yourself..."
           />
         </div>
 
         {/* Save button */}
-        <button className="mt-4 w-full py-2 bg-white text-black font-medium rounded-md hover:bg-gray-300 transition">
+        <button className="mt-2 w-full py-2 rounded-md border border-gray-600 bg-[#2e2e2e] text-white font-medium hover:bg-[#3a3a3a] transition">
           Save Changes
         </button>
+      </div>
+
+      {/* 🔲 Overlay تارکننده */}
+      {showPanel && (
+        <div className="fixed inset-0 bg-black bg-opacity-5 z-40 backdrop-blur-sm transition-opacity" />
+      )}
+
+      {/* 🔽 Bottom Sheet Panel */}
+      <div
+        ref={panelRef}
+        className={`fixed left-0 bottom-0 w-full bg-[#1e1e1e] text-white shadow-2xl rounded-t-xl p-4 transition-transform duration-300 z-50 ${
+          showPanel ? "translate-y-0" : "translate-y-full"
+        }`}
+        style={{ height: "35vh" }} // 🧱 ارتفاع بیشتر
+      >
+        <div className="flex items-center mb-4">
+          <h2 className="flex-grow text-lg font-semibold text-center">
+            Edit Picture
+          </h2>
+          <button
+            onClick={() => setShowPanel(false)}
+            className="text-2xl text-white transition"
+            aria-label="Close panel"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <button className="py-2 px-4 rounded-md transition text-left border flex items-center gap-1">
+            <img
+              src="./src/assets/Pictures/UpdatePic.svg"
+              alt="Update Icon"
+              className="w-6 h-6 invert"
+            />
+            Update Picture
+          </button>
+          <button className="py-2 px-4 rounded-md transition text-left text-red-500 border flex items-center gap-1">
+            <img
+              src="./src/assets/Pictures/TrashBin.svg"
+              alt="Trash Icon"
+              className="w-5 h-5"
+            />
+            Remove Current Picture
+          </button>
+        </div>
       </div>
     </div>
   );

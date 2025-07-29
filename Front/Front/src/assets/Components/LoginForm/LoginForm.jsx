@@ -93,7 +93,7 @@ export default function LoginForm() {
           placeholder="Enter Username"
           register={register}
           name="username"
-          errors={errors} // 👈 به جای error فقط اینو بده
+          errors={errors}
           autoComplete="off"
         />
 

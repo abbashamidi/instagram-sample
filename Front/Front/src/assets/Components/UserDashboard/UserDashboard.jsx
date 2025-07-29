@@ -7,16 +7,18 @@ import DashboardFooter from "./DashboardFooter";
 
 export default function UserDashboard() {
   const postsRef = useRef();
+  const profileRef = useRef(); 
   const [activeTab, setActiveTab] = useState("home");
 
   const handleUploadSuccess = () => {
-    postsRef.current?.refreshPosts?.();
+    postsRef.current?.refreshPosts?.();          
+    profileRef.current?.refreshPostCount?.();   
   };
 
   return (
     <div className="w-screen min-h-screen flex flex-col bg-[#121212] text-white">
       <DashboardHeader onUploadSuccess={handleUploadSuccess} />
-      <DashboardProfile />
+      <DashboardProfile ref={profileRef} />
       <DashboardButtons />
       <DashboardPosts ref={postsRef} />
       <DashboardFooter activeTab={activeTab} setActiveTab={setActiveTab} />
