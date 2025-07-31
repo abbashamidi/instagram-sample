@@ -17,10 +17,19 @@ function authReducer(state, action) {
         user: null,
         isAuthenticated: false,
       };
+    case "UPDATE_USER":
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          ...action.payload,
+        },
+      };
     default:
       return state;
   }
 }
+
 
 const AuthContext = createContext();
 const AuthDispatchContext = createContext();

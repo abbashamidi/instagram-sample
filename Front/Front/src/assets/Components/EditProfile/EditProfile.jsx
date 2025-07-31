@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthDispatch } from "../../AuthContext/AuthContext";
 
 export default function EditProfile() {
   const [loading, setLoading] = useState(true);
@@ -7,10 +8,112 @@ export default function EditProfile() {
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState(null);
   const [showPanel, setShowPanel] = useState(false);
-
   const panelRef = useRef(null); // 👈 برای کلیک بیرونی
-
+  const dispatch = useAuthDispatch();
   const navigate = useNavigate();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  const handleRemoveAvatar = () => {
+    console.log("remove picture");
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      const res = await fetch("http://localhost:3000/avatar", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      const avatarUrl = `http://localhost:3000${data.avatar}`;
+      setAvatar(avatarUrl);
+
+      dispatch({ type: "UPDATE_USER", payload: { avatar: data.avatar } });
+
+      alert("Profile picture updated!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to upload avatar.");
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      // Reset all errors
+      setNewPasswordError("");
+      setConfirmPasswordError("");
+      setCurrentPasswordError("");
+
+      // 1. Update profile info
+      const res = await fetch("http://localhost:3000/me", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, bio }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText);
+      }
+
+      dispatch({ type: "UPDATE_USER", payload: { username, bio } });
+
+      if (currentPassword || newPassword || confirmPassword) {
+        if (!currentPassword) {
+          setCurrentPasswordError("Current password is required");
+          return;
+        }
+
+        if (!newPassword) {
+          setNewPasswordError("New password is required");
+          return;
+        }
+
+        if (newPassword !== confirmPassword) {
+          setConfirmPasswordError("New passwords do not match");
+          return;
+        } else {
+          setConfirmPasswordError("");
+        }
+
+        setNewPasswordError("");
+        setConfirmPasswordError("");
+        setCurrentPasswordError("");
+
+        const pwRes = await fetch("http://localhost:3000/change-password", {
+          method: "PUT",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+
+        if (!pwRes.ok) {
+          const errorText = await pwRes.text();
+          throw new Error(errorText || "Failed to change password");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      // Optionally set a generic error state for display
+      setCurrentPasswordError(err.message || "Something went wrong!");
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -40,7 +143,6 @@ export default function EditProfile() {
     fetchProfile();
   }, []);
 
-  // 👇 هندل کلیک بیرون از پنل
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (
@@ -79,8 +181,7 @@ export default function EditProfile() {
       </div>
 
       {/* Form */}
-      {/* Form */}
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-1.5">
         {/* Avatar */}
         <div className="relative flex flex-col items-center">
           <img
@@ -112,8 +213,55 @@ export default function EditProfile() {
           />
         </div>
 
+        {/* Change Password (Optional) */}
+        <div className="w-full space-y-2 border-t border-gray-700 pt-1.5 mt-1.5">
+          <span className="block text-sm text-gray-400 mb-1 pl-1.5">
+            Change Password
+          </span>
+
+          <input
+            type="password"
+            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none border border-gray-700 focus:border-gray-500"
+            placeholder="Current password"
+            value={currentPassword}
+            onChange={(e) => {
+              setCurrentPassword(e.target.value);
+              setCurrentPasswordError("");
+            }}
+          />
+          {currentPasswordError && (
+            <p className="text-red-500 text-sm mt-1">{currentPasswordError}</p>
+          )}
+
+          <input
+            type="password"
+            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none border border-gray-700 focus:border-gray-500"
+            placeholder="New password"
+            value={newPassword}
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              setNewPasswordError("");
+              setConfirmPasswordError("");
+            }}
+          />
+
+          <input
+            type="password"
+            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none border border-gray-700 focus:border-gray-500"
+            placeholder="Confirm new password"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setConfirmPasswordError("");
+            }}
+          />
+          {confirmPasswordError && (
+            <p className="text-red-500 text-sm mt-1">{confirmPasswordError}</p>
+          )}
+        </div>
+
         {/* Bio */}
-        <div className="w-full">
+        <div className="w-full border-t border-gray-700 pt-1.5 mt-1.5">
           <span className="block text-sm text-gray-400 mb-1 pl-1.5">Bio</span>
           <textarea
             className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none border border-gray-700 focus:border-gray-500 focus:ring-2 focus:ring-gray-500 transition resize-none"
@@ -124,7 +272,13 @@ export default function EditProfile() {
         </div>
 
         {/* Save button */}
-        <button className="mt-2 w-full py-2 rounded-md border border-gray-600 bg-[#2e2e2e] text-white font-medium hover:bg-[#3a3a3a] transition">
+        <button
+          onClick={() => {
+            handleSave();
+            setShowConfirmModal(true);
+          }}
+          className="mt-2 w-full py-2 rounded-md border border-gray-600 bg-[#2e2e2e] text-white font-medium hover:bg-[#3a3a3a] transition"
+        >
           Save Changes
         </button>
       </div>
@@ -140,7 +294,7 @@ export default function EditProfile() {
         className={`fixed left-0 bottom-0 w-full bg-[#1e1e1e] text-white shadow-2xl rounded-t-xl p-4 transition-transform duration-300 z-50 ${
           showPanel ? "translate-y-0" : "translate-y-full"
         }`}
-        style={{ height: "35vh" }} // 🧱 ارتفاع بیشتر
+        style={{ height: "35vh" }}
       >
         <div className="flex items-center mb-4">
           <h2 className="flex-grow text-lg font-semibold text-center">
@@ -156,7 +310,18 @@ export default function EditProfile() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <button className="py-2 px-4 rounded-md transition text-left border flex items-center gap-1">
+          <input
+            type="file"
+            accept="image/*"
+            id="avatar-input"
+            className="hidden"
+            onChange={handleAvatarUpload}
+          />
+
+          <button
+            onClick={() => document.getElementById("avatar-input").click()}
+            className="py-2 px-4 rounded-md transition text-left border flex items-center gap-1"
+          >
             <img
               src="./src/assets/Pictures/UpdatePic.svg"
               alt="Update Icon"
@@ -164,7 +329,10 @@ export default function EditProfile() {
             />
             Update Picture
           </button>
-          <button className="py-2 px-4 rounded-md transition text-left text-red-500 border flex items-center gap-1">
+          <button
+            onClick={handleRemoveAvatar}
+            className="py-2 px-4 rounded-md transition text-left text-red-500 border flex items-center gap-1"
+          >
             <img
               src="./src/assets/Pictures/TrashBin.svg"
               alt="Trash Icon"
