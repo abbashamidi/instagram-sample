@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthDispatch } from "../../AuthContext/AuthContext";
+import EditAvatar from "./EditAvatar";
+import BottomSheetPanel from "./BottomSheetPanel";
+import ConfirmModal from "./ConfirmModal";
+import EditPassword from "./EditPassword";
+import BioField from "./BioField";
+import UsernameField from "./UsernameField";
 
 export default function EditProfile() {
   const [loading, setLoading] = useState(true);
@@ -54,12 +60,10 @@ export default function EditProfile() {
 
   const handleSave = async () => {
     try {
-      // Reset all errors
       setNewPasswordError("");
       setConfirmPasswordError("");
       setCurrentPasswordError("");
 
-      // 1. Update profile info
       const res = await fetch("http://localhost:3000/me", {
         method: "PUT",
         credentials: "include",
@@ -110,7 +114,6 @@ export default function EditProfile() {
       }
     } catch (err) {
       console.error(err);
-      // Optionally set a generic error state for display
       setCurrentPasswordError(err.message || "Something went wrong!");
     }
   };
@@ -168,7 +171,6 @@ export default function EditProfile() {
 
   return (
     <div className="relative w-full min-h-screen bg-[#121212] text-white px-4 py-5 overflow-hidden">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate("/dashboard")}>
           <img
@@ -180,168 +182,55 @@ export default function EditProfile() {
         <h1 className="text-xl font-semibold">Edit Profile</h1>
       </div>
 
-      {/* Form */}
       <div className="flex flex-col items-center gap-1.5">
-        {/* Avatar */}
-        <div className="relative flex flex-col items-center">
-          <img
-            src={
-              avatar ||
-              "https://www.svgrepo.com/show/384674/account-avatar-profile-user-11.svg"
-            }
-            alt="Avatar"
-            className="w-28 h-28 rounded-full object-cover border border-gray-500"
-          />
-          <span
-            onClick={() => setShowPanel(true)}
-            className="mt-4 text-sm text-blue-400 cursor-pointer hover:underline"
-          >
-            Edit Profile Picture
-          </span>
-        </div>
 
-        {/* Username */}
-        <div className="w-full">
-          <span className="block text-sm text-gray-400 mb-1 pl-1.5">
-            Username
-          </span>
-          <input
-            type="text"
-            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none border border-gray-700 focus:border-gray-500 focus:ring-2 focus:ring-gray-500 transition"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-        </div>
+        <EditAvatar avatar={avatar} onEditClick={() => setShowPanel(true)} />
 
-        {/* Change Password (Optional) */}
-        <div className="w-full space-y-2 border-t border-gray-700 pt-1.5 mt-1.5">
-          <span className="block text-sm text-gray-400 mb-1 pl-1.5">
-            Change Password
-          </span>
+        <UsernameField username={username} setUsername={setUsername} />
 
-          <input
-            type="password"
-            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none border border-gray-700 focus:border-gray-500"
-            placeholder="Current password"
-            value={currentPassword}
-            onChange={(e) => {
-              setCurrentPassword(e.target.value);
-              setCurrentPasswordError("");
-            }}
-          />
-          {currentPasswordError && (
-            <p className="text-red-500 text-sm mt-1">{currentPasswordError}</p>
-          )}
+        <EditPassword
+          currentPassword={currentPassword}
+          setCurrentPassword={setCurrentPassword}
+          currentPasswordError={currentPasswordError}
+          newPassword={newPassword}
+          setNewPassword={setNewPassword}
+          newPasswordError={newPasswordError}
+          confirmPassword={confirmPassword}
+          setConfirmPassword={setConfirmPassword}
+          confirmPasswordError={confirmPasswordError}
+        />
 
-          <input
-            type="password"
-            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none border border-gray-700 focus:border-gray-500"
-            placeholder="New password"
-            value={newPassword}
-            onChange={(e) => {
-              setNewPassword(e.target.value);
-              setNewPasswordError("");
-              setConfirmPasswordError("");
-            }}
-          />
+        <BioField bio={bio} setBio={setBio} />
 
-          <input
-            type="password"
-            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none border border-gray-700 focus:border-gray-500"
-            placeholder="Confirm new password"
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              setConfirmPasswordError("");
-            }}
-          />
-          {confirmPasswordError && (
-            <p className="text-red-500 text-sm mt-1">{confirmPasswordError}</p>
-          )}
-        </div>
-
-        {/* Bio */}
-        <div className="w-full border-t border-gray-700 pt-1.5 mt-1.5">
-          <span className="block text-sm text-gray-400 mb-1 pl-1.5">Bio</span>
-          <textarea
-            className="w-full px-3 py-2 rounded-md bg-[#1e1e1e] text-white outline-none border border-gray-700 focus:border-gray-500 focus:ring-2 focus:ring-gray-500 transition resize-none"
-            rows={3}
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-          />
-        </div>
-
-        {/* Save button */}
         <button
-          onClick={() => {
-            handleSave();
-            setShowConfirmModal(true);
-          }}
+          onClick={() => setShowConfirmModal(true)} // ❌ Don't save yet
           className="mt-2 w-full py-2 rounded-md border border-gray-600 bg-[#2e2e2e] text-white font-medium hover:bg-[#3a3a3a] transition"
         >
           Save Changes
         </button>
       </div>
 
-      {/* 🔲 Overlay تارکننده */}
       {showPanel && (
         <div className="fixed inset-0 bg-black bg-opacity-5 z-40 backdrop-blur-sm transition-opacity" />
       )}
 
-      {/* 🔽 Bottom Sheet Panel */}
-      <div
-        ref={panelRef}
-        className={`fixed left-0 bottom-0 w-full bg-[#1e1e1e] text-white shadow-2xl rounded-t-xl p-4 transition-transform duration-300 z-50 ${
-          showPanel ? "translate-y-0" : "translate-y-full"
-        }`}
-        style={{ height: "35vh" }}
-      >
-        <div className="flex items-center mb-4">
-          <h2 className="flex-grow text-lg font-semibold text-center">
-            Edit Picture
-          </h2>
-          <button
-            onClick={() => setShowPanel(false)}
-            className="text-2xl text-white transition"
-            aria-label="Close panel"
-          >
-            &times;
-          </button>
-        </div>
+      <BottomSheetPanel
+        show={showPanel}
+        panelRef={panelRef}
+        onClose={() => setShowPanel(false)}
+        onAvatarUpload={handleAvatarUpload}
+        onRemoveAvatar={handleRemoveAvatar}
+      />
 
-        <div className="flex flex-col gap-3">
-          <input
-            type="file"
-            accept="image/*"
-            id="avatar-input"
-            className="hidden"
-            onChange={handleAvatarUpload}
-          />
-
-          <button
-            onClick={() => document.getElementById("avatar-input").click()}
-            className="py-2 px-4 rounded-md transition text-left border flex items-center gap-1"
-          >
-            <img
-              src="./src/assets/Pictures/UpdatePic.svg"
-              alt="Update Icon"
-              className="w-6 h-6 invert"
-            />
-            Update Picture
-          </button>
-          <button
-            onClick={handleRemoveAvatar}
-            className="py-2 px-4 rounded-md transition text-left text-red-500 border flex items-center gap-1"
-          >
-            <img
-              src="./src/assets/Pictures/TrashBin.svg"
-              alt="Trash Icon"
-              className="w-5 h-5"
-            />
-            Remove Current Picture
-          </button>
-        </div>
-      </div>
+      <ConfirmModal
+        show={showConfirmModal}
+        onCancel={() => setShowConfirmModal(false)}
+        onConfirm={async () => {
+          await handleSave();
+          setShowConfirmModal(false);
+          navigate("/");
+        }}
+      />
     </div>
   );
 }
